@@ -1,16 +1,11 @@
+
 {
-   "token":"ODc4ODczNzgwNTk0ODM1NDc2.YSHg_Q.LiUOmwWcl37Er7ROyl6elEDQdcQ",
-   "YOUTUBE_API_KEY": "AIzaSyAFvwxs5Wq9EPrhIuI1htExlqp3AN5dR1Q",
-   "GOOGLE_KEY": "AIzaSyBudaKiBYYlyPanw9FrRy8Pac-TeO63m30",
-   "ENGINE_ID": "",
-   "CHANNEL_WELCOME": "843659584749174815",
-   "ROLES_WELCOME": [""],
-   "CHANNELID":"843454976935329804",
-   "default_prefix" : "??",
-   "Owner": "788208207465938954",
-   "Invite": "https://discord.com/api/oauth2/authorize?client_id=832130934630252575&permissions=0&scope=bot",
-   "Server": "https://discord.gg/HGd5uJ7eV8",
-   "CHANNELS_ID":{
-      "SUGGESTIONS":"5578875677"
-  }
+    "token": "NzY5NDMzNjQ3NjkwMjg1MDU3.X5O87A.cuk3-j8kVkskF2PYxYiG4e-3H8U",
+    "googleKey": "AIzaSyDOLo2ynqMnTAwbYwv1NNYSVvhO1T738kc",
+    "csx": "808b7fca880cf9fc0",
+    "ygoogle": "AIzaSyCtq7lmbTLS0Qnq4X3mMkgwYcUvuAwlhUg",
+    "mongoPath": "mongodb://localhost:27017/discordbotDB4",
+    "prefix": "--",
+    "apiipkey": "f118ee8cc56c41809d63ed2bfcc8ee55",
+    "myip": "42.116.154.75"
 }

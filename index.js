@@ -1,178 +1,402 @@
-console.clear()
-console.log("[INFO]: BOT MẪU GIÁ 350K...")
-const { Client, Collection } = require('discord.js');
-const db = require('quick.db')
-Discord = require("discord.js");
-const config = require("./config.json");
-const { token } = require('./config.json');
-const { default_prefix } = require('./config.json');
-const { readdirSync } = require('fs');
-const { MessageEmbed } = require('discord.js');
-const fs = require('fs');
-const { CHANNELID } = require('./config.json');
-const picExt = [".webp", ".png", ".jpg", ".jpeg", ".gif"];
-const videoExt = [".mp4", ".webm", ".mov"];
-const client = new Client({
-    disableMentions: 'everyone'
-});
-const moment = require("moment")
-const guildInvites = new Map();
-const ms = require('ms');
+const { Collection, Client, Discord } = require('discord.js')
+const fs = require('fs')
+const welcome1 = require('./welcome1')
+const mongo = require('./mongo')
+const level1 = require('./level1')
+const axios = require('axios');
 
-const setups = require("./handlers/setups");
-setups(client);
+const Pings = new Collection();
 
-client.on('inviteCreate', async inivte => {
-    const channel = inivte.guild.channels.cache.get('838466405577392140');
-    if (channel) {
-        const embed = new MessageEmbed()
-            .setTitle(`Có link invite mới được tạo!`)
-            .addField('Người tạo', inivte.inviter.tag)
-            .setFooter(`ID: ${inivte.inviter.id}`)
-            .addField('Số lượng: ', inivte.maxUses == 0 ? "Không giới hạn" : inivte.maxUses)
-            .addField('Thời hạn của link: ', inivte.maxAge == 0 ? "Không giới hạn" : ms(inivte.maxAge, { long: true }))
-            .setTimestamp()
-        channel.send(embed)
-    }
-    guildInvites.set(inivte.guild.id, await inivte.guild.fetchInvites())
-});
+const inviteNotifications = require('./invite-notifications')
 
-const { GiveawaysManager } = require("discord-giveaways");
-// Starts updating currents giveaways
-client.giveawaysManager = new GiveawaysManager(client, {
- storage: "./handlers/giveaways.json",
- updateCountdownEvery: 5000,
- default: {
- botsCanWin: false,
- embedColor: "#FF0000",
- reaction: "🎉"
- }
-});
+const { MessageEmbed } = require("discord.js");
 
-client.giveawaysManager.on("giveawayReactionAdded", (giveaway, member, reaction) => {
- console.log(`${member.user.tag} entered giveaway #${giveaway.messageID} (${reaction.emoji.name})`);
-});
+// const mongo = require('./mongo')
+// const command = require('./command')
+// const welcomeSchema = require('./schemas/welcome-schema')
+// const { welcome } = require('./functions/canvasfunctionwcr');
+// const discord = require("discord.js");
 
-client.giveawaysManager.on("giveawayReactionRemoved", (giveaway, member, reaction) => {
- console.log(`${member.user.tag} unreact to giveaway #${giveaway.messageID} (${reaction.emoji.name})`);
-});
+// const { CanvasSenpai } = require("canvas-senpai")
+// const { welcome } = require('./functions/canvasfunctionwc');
+// const { welcome } = require('./functions/canvasfunctionwcr');
+// const canva = new CanvasSenpai();
+const discord = require("discord.js");
 
-client.giveawaysManager.on("giveawayEnded", (giveaway, winners) => {
- console.log(`Giveaway #${giveaway.messageID} ended! Winners: ${winners.map((member) => member.user.username).join(', ')}`);
-});
- 
-
-const welcome = require("./welcome");
-welcome(client);
+// const client = new Client({
+//   disableEveryone: true,
+//   retryLimit: 5
+// })
+const client = new Client({ disableMentions: "everyone", retryLimit: 5 });
+const config = require('./config.json')
+const { e } = require('mathjs')
+const prefix = config.prefix
+const token = config.token
 client.commands = new Collection();
 client.aliases = new Collection();
-client.queue = new Map();
-client.categoryes = readdirSync(`./commands/`);
-
+client.categories = fs.readdirSync("./commands/");
 ["command"].forEach(handler => {
-    require(`./handlers/${handler}`)(client);
+  require(`./handlers/${handler}`)(client);
 });
 
+// client.on("guildMemberAdd", (member) => {
 
-client.on('guildMemberAdd', async member => {
-    const cachedInvites = guildInvites.get(member.guild.id);
-    const newInvites = await member.guild.fetchInvites();
-    guildInvites.set(member.guild.id, newInvites);
-    try {
-        const usedInvite = newInvites.find(inv => cachedInvites.get(inv.code).uses < inv.uses);
-        const channel = member.guild.channels.cache.get('838466405577392140');
-        if (channel) {
-            const embed = new MessageEmbed()
-                .setDescription(`${member} (${member.user.tag}) đã vào server!\nMời bởi \`${usedInvite ? usedInvite.inviter.tag : "Không xác định được"}\``)
-                .setFooter(`ID người vào: ${member.id}`)
-                .setTimestamp()
-            channel.send(embed)
-        }
-    }
-    catch(err) {
-        console.log(err);
-    }
+//   console.log("some 1 jont!");
+// });
+
+// client.on("guildMemberRemove", async member => {
+//   const guild = member.guild;
+//   // if (newUsers[guild.id].has(member.id)) newUsers.delete(member.id);
+//   console.log("some 1 left!");
+// });
+// 123213
+
+client.on('ready', async () => {
+  client.user.setActivity(`${prefix}help`)
+  console.log(`${client.user.username} ✅`)
+
+  // await mongo().then((mongoose) => {
+  //   try {
+  //     console.log('Connected to mongo!')
+  //   } finally {
+  //     mongoose.connection.close()
+  //   }
+  // })
+  // client.user.setActivity(`${PREFIX}help and ${PREFIX}play`, { type : "LISTENING" });
+  //CHANGE {type: 2} in 
+  //1 FOR PLAYING
+  //2 FOR LISTENING
+  //3 FOR WATCHING
+  client.user.setActivity(`Chúa Hề nè`, { type: 3 });
+  welcome1(client)
+  level1(client)
+  // inviteNotifications(client)
 })
+client.on('message', async message => {
+
+  if (message.author.bot) return;
+  if (!message.content.startsWith(prefix)) return;
+  if (!message.guild) return;
+  if (!message.member) message.member = await message.guild.fetchMember(message);
+  const args = message.content.slice(prefix.length).trim().split(/ +/g);
+  const cmd = args.shift().toLowerCase();
+  if (cmd.length == 0) return;
+  let command = client.commands.get(cmd)
+  if (!command) command = client.commands.get(client.aliases.get(cmd));
+  if (command) command.run(client, message, args)
+
+
+})
+
+// client.on('message', async msg => {
+//   if (msg.content === 'tst') {
+//     // msg.reply('hi bro tui đã check!');
+//     msg.channel.send('ók' + msg.channel.id);
+//   }
+// });
 
 client.on('message', async message => {
-    const prefix = '&';
-    if (message.author.bot) return;
-    let choosePrefix = null;
-    const prefixList = [`<@${client.user.id}>`, `<@!${client.user.id}>`, prefix];
-    for (const thisprefix of prefixList) {
-        if (message.content.toLowerCase().startsWith(thisprefix)) choosePrefix = thisprefix
-    }
-    if (prefix === null) return;
-    if (!message.content.startsWith(choosePrefix)) return;
-    const args = message.content.slice(prefix.length).trim().split(/ +/g);
-    const cmd = args.shift().toLowerCase();
-    switch(cmd) {
-        case 'invite': {
-            if (!args[0]) return message.channel.send('VD: `&invite 3n 5m`\n3n = 3 người, 5m = 5 phút');
-            let songuoi = args[0];
-            if (!songuoi.endsWith('n')) return message.channel.send('Nhập số người invite (0n để không giới hạn)');
-            songuoi = parseInt(args[0].replace('n', ''));
-            let thoigian = args[1];
-            if (thoigian !== 0) thoigian = ms(thoigian);
-            if (!thoigian) return message.channel.send('Thời gian không hợp lệ!');
-            let sanhchung = message.guild.channels.cache.get('838466405577392140');
-            if (!sanhchung) return message.channel.send('Không tìm thấy channel sảnh chung!');
-            let inv = await sanhchung.createInvite({ maxAge: thoigian, maxUses: songuoi });
-            message.author.send(`Link invite của bạn: ${inv.url}`);
-        }
-    }
-})
-// Invite
-client.on("message", async message => {
-   
 
-    if (message.author.bot) return;
-    if (!message.guild) return;
-  let prefix = db.get(`prefix_${message.guild.id}`)
-  if(prefix === null) prefix = default_prefix;
-    if (!message.content.startsWith(prefix)) return;
-    if (!message.member) message.member = await message.guild.fetchMember(message);
 
-    const args = message.content.slice(prefix.length).trim().split(/ +/g);
-    const cmd = args.shift().toLowerCase();
-    
-    if (cmd.length === 0) return;
-    let command = client.commands.get(cmd);
-    if (!command) command = client.commands.get(client.aliases.get(cmd));
-    if (command) 
-        command.run(client, message, args, db); // thêm "db" nếu về sau sử dụng mà có lỗi thì xoá db và welcome 
+
+  // let messageArray = message.content.split(" ");
+  // let args1 = messageArray.slice(1);
+  // // let cmd = messageArray[0];
+  // var member = message.guild.member(message.mentions.users.first() || message.guild.members.cache.get(args1[0]));
+
+  const { guild, channel } = message
+
+  const user12 = message.mentions.users.first() || message.member.user
+  const member = guild.members.cache.get(user12.id)
+
+  // message.channel.send(message.author.tag+`adkjshadkjsahkjhd ${member.user.tag}`);
+
+  if (member.user.tag === 'Obi dâm#3617' && !message.author.bot) {
+    // message.reply('hi bro tui đã check!');
+    // message.channel.send(message.author.tag+'Bán muốn sữ dụng tôi thử --h'+ message.content );
+    message.reply(`Bạn muốn sử dụng tôi hãy xem lệnh bằng câu lênh sau **--h**`);
+  }
 });
 
-// Confession 
+// client.on('message', async msg => {
+//   // const aiChannel = '793746676716011530'//aichannel
+//   const aiChannel = 'aichannel'//aichannel
+//   if (msg.channel.name == aiChannel && !msg.author.bot) {
+
+//     let url1 = `https://simsimi.copcute.pw/api/?text=${encodeURIComponent(msg.content)}&lang=vi_VN`;
+
+//     // url1 = `https://simsimi.copcute.pw/api/?text=${encodeURIComponent(message.content)}&lang=vi_VN`;
+
+//     const res = await axios.get(url1);
+//     // if (!checkMsgPerm(message)) return message.author.send('Mình không có quyền gởi tin nhắn ở server này!').catch(err => console.log(`${message.author.id} không mở DMs`));
+//     // message.channel.send(!aiLang || aiLang === 'vi' ? res1.data.success : res1.data.cnt);
+//     msg.channel.send(res.data.success);
+
+//   }
+// });
+
+//Start ai chat ***************
+
+client.on('message', async msg => {
+
+  const args = msg.content.slice(prefix.length).trim().split(/ +/g);
+  const args1 = msg.content.slice().trim().split(/ +/g);
+
+  const cat = ''
+  const aiChannel = 'aichannel'//aichannel
+  const text = args.slice().join(' ')
+
+  // const aiChannel = '793746676716011530'
+  const BID = '154399'
+  const BRAINKEY = 'eAiW4QXqgyWjUL9k'
+
+  // const aiLang = ``
+
+  if (args1[0] === 'en' || args1[0] === 'En') {
+
+    const aiLang = `en`
+
+    if (msg.channel.name == aiChannel && !msg.author.bot) {
+
+      let url;
+      if (!aiLang || aiLang === 'vi') url = `https://simsimi.copcute.pw/api/?text=${encodeURIComponent(text)}&lang=vi_VN`;
+      else url = `http://api.brainshop.ai/get?bid=${BID}&key=${BRAINKEY}&uid=1&msg=${encodeURIComponent(text)}`;
+      const res = await axios.get(url);
+      // if (!checkMsgPerm(msg)) return msg.author.send('Mình không có quyền gởi tin nhắn ở server này!').catch(err => console.log(`${msg.author.id} không mở DMs`));
+      msg.channel.send(!aiLang || aiLang === 'vi' ? res.data.success : res.data.cnt);
+      // msg.channel.send(args.slice().join(' '));
+      // msg.channel.send(aiLang + text);
+      // msg.channel.send(args1[0]);
+
+    }
+  }
+  else {
+
+    const aiLang = `vi`
+
+    if (msg.channel.name == aiChannel && !msg.author.bot) {
+
+      let url;
+      if (!aiLang || aiLang === 'vi') url = `https://simsimi.copcute.pw/api/?text=${encodeURIComponent(msg.content)}&lang=vi_VN`;
+      else url = `http://api.brainshop.ai/get?bid=${BID}&key=${BRAINKEY}&uid=1&msg=${encodeURIComponent(msg.content)}`;
+      const res = await axios.get(url);
+      // if (!checkMsgPerm(msg)) return msg.author.send('Mình không có quyền gởi tin nhắn ở server này!').catch(err => console.log(`${msg.author.id} không mở DMs`));
+      msg.channel.send(!aiLang || aiLang === 'vi' ? res.data.success : res.data.cnt);
+      // msg.channel.send(args.slice().join(' '));
+      // msg.channel.send(aiLang + text);
+      // msg.channel.send(args1[0]);
+
+    }
+  }
+  // const aiLang = `${msg[0]}`
+  // if (msg.channel.name == aiChannel && !msg.author.bot) {
+
+  //   let url;
+  //   if (!aiLang || aiLang === 'vi') url = `https://simsimi.copcute.pw/api/?text=${encodeURIComponent(text)}&lang=vi_VN`;
+  //   else url = `http://api.brainshop.ai/get?bid=${BID}&key=${BRAINKEY}&uid=1&msg=${encodeURIComponent(text)}`;
+  //   const res = await axios.get(url);
+  //   // if (!checkMsgPerm(msg)) return msg.author.send('Mình không có quyền gởi tin nhắn ở server này!').catch(err => console.log(`${msg.author.id} không mở DMs`));
+  //   msg.channel.send(!aiLang || aiLang === 'vi' ? res.data.success : res.data.cnt);
+  //   // msg.channel.send(args.slice().join(' '));
+  //   // msg.channel.send(aiLang + args1[0]);
+  //   // msg.channel.send(args1[0]);
+
+  // }
+});
+
+//End ai chat *************
+
+const channelId = '768377537834254338' // welcome channel 717168653300269119
+const targetChannelId = '761989109337554964'
+
+// client.on("guildMemberAdd", member => {
+//     console.log("someone joined!");
+//     // const channel = member.guild.channels.cache.get(channelId)
+//     welcome1(client)
+
+//     // channel.send('Hello123');
+// })
+
+// client.on("guildMemberRemove", member => {
+//     const channel = member.guild.channels.cache.get(channelId)
+//     console.log("someone left!");
+//     channel.send(`bye 1 bạn ${member.user.tag}`)
+// })
+
+
+
+
+
+
+
+// client.on('message', async (message) => {
+//   if (message.author.bot) return;
+//   let substringArray = get_substrings_between(message.content, ":",":");
+//   let msg = message.content;
+//   if(!substringArray.length) return;
+
+//   substringArray.forEach(m => {
+//     let emoji = client.emojis.cache.find(x => x.name === m);
+//     var replace = `:${m}:`;
+//     var rexreplace = new RegExp(replace, 'g');
+
+//     if(emoji && !msg.split(" ").find(x => x === emoji.toString()) && !msg.includes(`<a${replace}${emoji.id}>`)) msg = msg.replace(rexreplace, emoji.toString());
+//   });
+
+//   if(msg ===  message.content) return;
+
+//   let webhook = await message.channel.fetchWebhooks();
+//   webhook = webhook.find(x => x.name === "NQN34567́9");
+
+//   if(!webhook){
+//     webhook = await message.channel.createWebhook(`NQN34567́9`,{
+//       avatar: client.user.displayAvatarURL({dynamic: true})
+//     });
+//   }
+
+//   await webhook.edit({
+//     name: message.member.nickname ? message.member.nickname : message.author.username,
+//     avatar: message.author.displayAvatarURL({dynamic: true})
+//   })
+
+//   // message.delete().cache(m => {})
+
+//   webhook.send(msg).catch(m => {});
+//   message.delete().cache(m => {})
+
+//   await webhook.edit({
+//     name: `NQN34567́9`,
+//     avatar: client.user.displayAvatarURL({dynamic:true})
+//   })
+
+// });
+
+
+
+// //-----------------------------------Funtion-----------------------------------------------------
+
+// function get_substrings_between(str, starDelimiter, endDelimiter){
+
+//   var contents = [];
+//   var starDelimiterLength = starDelimiter.length;
+//   var endDelimiterLength = endDelimiter.length;
+//   var startFrom = contentStart = contentEnd = 0;
+
+//   while (false !== (contentStart = strpos(str, starDelimiter, startFrom))){
+//     contentStart += starDelimiterLength;
+//     contentEnd = strpos(str, endDelimiter, contentStart);
+//     if(false == contentEnd){
+//       break;
+//     }
+
+//     contents.push(str.substr(contentStart, contentEnd - contentStart));
+//     startFrom = contentEnd + endDelimiterLength;
+
+//   }
+
+//   return contents;
+// }
+
+// function strpos(haystack, needle, offset){
+//   var i = (haystack + '').indexOf(needle, (offset || 0));
+//   return i === -1 ? false : i;
+// }
+
+
+// //---------------------------------------End Funtion---------------------------------------------
+
+
+
+
 client.on("message", async message => {
-    if (message.author.bot) return;
-    if (message.channel.type !== 'dm') return;
-    if (message.content.length > 1024) return message.channel.send('tin nhắn chỉ được dưới 1024 ký tự!');
-    else {
-        await message.react("🙂");
-        message.channel.send('\`đã gửi confession thành công\`');
-        let count = JSON.parse(fs.readFileSync('./assets/json/count.json')).count;
-        count++;
-        const cfschannel = client.channels.cache.get(CHANNELID);
-        if (!cfschannel) return;
+  if (!message.mentions.members.first()) return;
+  if (message.mentions.members.first().id === message.author.id) return;
+  const time = 5000;
+  Pings.set(`pinger:${message.author.id}`, Date.now() + time);
+
+  setTimeout(() => {
+    Pings.delete(`pinger:${message.mentions.members.first().id}`);
+  }, time);
+
+});
+
+client.on("messageDelete", message => {
+  if (!message.mentions.members.first()) return;
+  // if (Pings.has(`pinger:${message.mentions.members.first().id}`)) {
+  //   console.log(2);
+  //   message.channel.send(
+  //     new MessageEmbed()
+  //       .setTitle("PHÁT HIỆN PING!")
+  //       .addField("Tác giả", message.author, true)
+  //       .addField("ConteFnt", message.content, true)
+  //       .setColor("RANDOM")
+  //       .setTimestamp()
+  //   );
+  // }
+
+  if (message.mentions.members.first() != '') {
+    // message.reply('hi bro tui đã check!');
+    // message.channel.send(message.author.tag+'Bán muốn sữ dụng tôi thử --h'+ message.content );
+    message.reply(
+      new MessageEmbed()
+        .setTitle("PHÁT HIỆN PING!")
+        .addField("Tác giả", message.author, true)
+        .addField("ConteFnt", message.content, true)
+        .setColor("RANDOM")
+        .setTimestamp()
+    )
+  }
+
+});
+
+
+/// starboard start
+let idsvss = '717168653300269116' 
+let idcnss = '717168653300269119'
+
+
+// client.on("messageReactionAdd", async (reaction, user) => {
+client.on('messageReactionAdd', async (reaction, user) => {
+
+  if (reaction.message.channel.type === "dm") return; //Skip DM.
+  if (reaction.message.partial) await reaction.message.fetch(true);
+  if (reaction.partial) await reaction.fetch();
+  if (reaction.message.author.bot || user.bot) return;
+
+  let starboardChannel = reaction.message.guild.channels.cache.get(idcnss);
+  let starboardFetch = await starboardChannel.fetch({ limit: 100 });
+
+  let exist = starboardFetch.messages.cache
+    .find(m => m.embeds.length >= 1 && m.embeds[0].title === "👍 Like" && m.embeds[0].fields[0].value.match(reaction.message.id));
+
+  if (exist) return;
+
+  if (reaction.message.guild.id == idsvss) {
+    if (reaction.emoji.name === "👍") {
+      let count = reaction.users.cache.filter(x => reaction.message.author.id !== x.id && !x.bot).array().length;
+
+      if (count >= 5) {
+        console.log('loghinh like')
         const embed = new MessageEmbed()
-            .setTitle(`**Confession: #${count}**`)
-            .setDescription(`${message.content}`)
-            .setColor("RANDOM") //
-            .setTimestamp() //
-            .setFooter(`Code by vinh`)
-            if (message.attachments.array().length > 0) {
-                let attachment = message.attachments.array()[0];
-        picExt.forEach(ext => {
-            if (attachment.name.endsWith(ext)) embed.setImage(attachment.attachment);
-        });
-        videoExt.forEach(ext => {
-            if (attachment.name.endsWith(ext)) cfschannel.send(attachment);
-        });
-        }
-        cfschannel.send(embed);
-        fs.writeFileSync('./assets/json/count.json', JSON.stringify({ count: count }));
-    }
-});
+          .setAuthor(reaction.message.author.tag, reaction.message.author.displayAvatarURL({ dynamic: true }))
+          .setTitle("👍 Like")
+          .setDescription(reaction.message.content.length <= 0 ? "" : reaction.message.content)
+          .addField("Original Content", `[Jump to Message](https://discord.com/channels/${reaction.message.guild.id}/${reaction.message.channel.id}/${reaction.message.id})`)
+          .setColor(0x7289DA)
 
-client.login(token);
+        if (reaction.message.attachments.array().length >= 1) embed.setImage(reaction.message.attachments.array()[0].proxyURL);
+
+        starboardChannel.send(embed);
+
+      }
+    }
+  }
+
+})
+
+
+
+///starboard End
+
+
+client.login(token)
